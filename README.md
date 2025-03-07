@@ -49,5 +49,3 @@ Future Enhancements:
 - Improve AI models for more accurate summarization & flashcard generation
 - Implement **database support** for storing and retrieving user-generated study materials
 
-License:
-MIT License
