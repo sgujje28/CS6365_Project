@@ -13,6 +13,7 @@ app = FastAPI()
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Load NLP models
 summarizer = pipeline("summarization")
 qa_pipeline = pipeline("question-generation")
 
@@ -38,7 +39,7 @@ async def extract_text(file: UploadFile = File(...)):
         images = convert_from_path(file_path)
         for img in images:
             text += pytesseract.image_to_string(img) + "\n"
-    elif file.filename.endswith(".png") or file.filename.endswith(".jpg"):
+    elif file.filename.endswith((".png", ".jpg", ".jpeg")):
         image = Image.open(file_path)
         text = pytesseract.image_to_string(image)
     else:
@@ -53,8 +54,12 @@ async def summarize_text(text: str):
 
 @app.post("/generate_flashcards/")
 async def generate_flashcards(text: str):
-    questions = qa_pipeline(text)
-    return {"flashcards": questions}
+    try:
+        questions = qa_pipeline(text)
+        flashcards = [q['question'] for q in questions]
+        return {"flashcards": flashcards}
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
