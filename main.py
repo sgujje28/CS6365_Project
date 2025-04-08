@@ -1,4 +1,7 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import uvicorn
 import os
 import shutil
@@ -6,20 +9,21 @@ import pytesseract
 from pdf2image import convert_from_path
 from PIL import Image
 from transformers import pipeline
-import json
 
 app = FastAPI()
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Load NLP models
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
 summarizer = pipeline("summarization")
 qa_pipeline = pipeline("question-generation")
 
-@app.get("/")
-def home():
-    return {"message": "StudyGenie API is running!"}
+@app.get("/", response_class=HTMLResponse)
+def serve_home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
@@ -33,7 +37,7 @@ async def extract_text(file: UploadFile = File(...)):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    
+
     text = ""
     if file.filename.endswith(".pdf"):
         images = convert_from_path(file_path)
@@ -44,7 +48,7 @@ async def extract_text(file: UploadFile = File(...)):
         text = pytesseract.image_to_string(image)
     else:
         return {"error": "Unsupported file format"}
-    
+
     return {"filename": file.filename, "extracted_text": text}
 
 @app.post("/summarize_text/")
