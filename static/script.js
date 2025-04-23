@@ -1,3 +1,4 @@
+
 document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const fileInput = document.getElementById("fileInput");
@@ -7,7 +8,6 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  // Extract Text
   const extractRes = await fetch("/extract_text/", {
     method: "POST",
     body: formData,
@@ -16,17 +16,14 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   const extractedText = extractData.extracted_text || "Error extracting text.";
   document.getElementById("extractedText").textContent = extractedText;
 
-  // Summarize
   const summarizeRes = await fetch("/summarize_text/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: extractedText }),
   });
   const summaryData = await summarizeRes.json();
-  document.getElementById("summary").textContent =
-    summaryData.summary || summaryData.original_text;
+  document.getElementById("summary").textContent = summaryData.summary || summaryData.original_text;
 
-  // Flashcards
   const flashRes = await fetch("/generate_flashcards/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
